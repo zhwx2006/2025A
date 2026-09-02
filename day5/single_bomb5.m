@@ -19,13 +19,19 @@ function intervals = single_bomb5(S, theta_deg, v, t0, tau, m, dt, t_cap)
     if nargin < 8 || isempty(t_cap), t_cap = t_hit5(m); end
     th = theta_deg * pi / 180;
     tdet = t0 + tau;                                   % 起爆时刻
-    tend = min([tdet + 20, t_hit5(m), t_cap]);         % 窗口上界
+    u = [-cos(th), sin(th), 0];                        % 水平单位向量
+    B = S + v*(t0+tau)*u + [0, 0, -0.5*9.8*tau^2];     % 爆点
+    if B(3) <= 0
+        intervals = zeros(0, 2);                       % 爆点已钻地（z<0），直接判空
+        return;
+    end
+    % ---- 任务单假设：云中心 z ≥ 0 不许钻地，窗口同时截到触地时刻 ----
+    t_z0 = tdet + B(3) / 3;                            % 云中心下沉到地面（z=0）的时刻
+    tend = min([tdet + 20, t_hit5(m), t_cap, t_z0]);   % 窗口上界（时域、命中、t_cap、触地）
     if tdet >= tend
         intervals = zeros(0, 2);
         return;
     end
-    u = [-cos(th), sin(th), 0];                        % 水平单位向量
-    B = S + v*(t0+tau)*u + [0, 0, -0.5*9.8*tau^2];     % 爆点
 
     t = (tdet:dt:tend)';
     % ---- 导弹位置 M_m(t)（向量化）----
